@@ -10,11 +10,12 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.NonNull
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.example.notificationtest.databinding.ActivityMainBinding
-import com.google.android.gms.tasks.OnCompleteListener
+import com.google.android.gms.tasks.Task
 import com.google.firebase.messaging.FirebaseMessaging
 
 private lateinit var binding: ActivityMainBinding
@@ -32,27 +33,30 @@ class MainActivity : AppCompatActivity() {
         myRegistrationToken()
 
         binding.buyBtn.setOnClickListener {
-            val numberOfCookies = binding.weirdPineapple.text.toString()
+            val numberOfPineapple = binding.weirdPineapple.text.toString()
+
+            //Subscribe to Topic - Firebase Cloud Massaging
+            subscribeToDiscount(Integer.parseInt(numberOfPineapple))
 
             val intent = Intent(this, SecondActivity::class.java)
-            intent.putExtra("weird_pineapple", numberOfCookies)
+            intent.putExtra("weird_pineapple", numberOfPineapple)
             val pendingIntent = PendingIntent.getActivity(
-                this,
-                0,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT)
+                    this,
+                    0,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT)
             val bitmap = BitmapFactory.decodeResource(resources, R.drawable.pineapple_owl)
 
             val builder = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_message)
                 .setContentTitle("Pineapple")
-                .setContentText("You just bought $numberOfCookies Weird Pineapple!")
+                .setContentText("You just bought $numberOfPineapple Weird Pineapple!")
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true)
                 .setLargeIcon(bitmap)
                 .addAction(R.mipmap.ic_launcher, "Get bonus!", pendingIntent)
                 .setColor(
-                    resources.getColor(R.color.red))
+                        resources.getColor(R.color.red))
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
             with(NotificationManagerCompat.from(this)) {
@@ -86,7 +90,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    fun myRegistrationToken() {
+    private fun myRegistrationToken() {
         FirebaseMessaging.getInstance().token
             .addOnCompleteListener OnCompleteListener@{ task ->
                 if (!task.isSuccessful) {
@@ -99,6 +103,29 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this@MainActivity, token, Toast.LENGTH_SHORT).show()
                 Log.d("Token", token)
             }
+    }
+
+
+    private fun subscribeToDiscount(pineapple: Int) {
+        if (pineapple <= 50) {
+            FirebaseMessaging.getInstance().subscribeToTopic("small_discount")
+                    .addOnCompleteListener { task ->
+                        if (!task.isSuccessful) {
+                            Toast.makeText(this@MainActivity, "Failed to Subscribe to Small Discount", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this@MainActivity, "Successfully Subscribed to Small Discount!", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+        } else {
+            FirebaseMessaging.getInstance().subscribeToTopic("huge_discount")
+                    .addOnCompleteListener { task ->
+                        if (!task.isSuccessful) {
+                            Toast.makeText(this@MainActivity, "Failed to Subscribe to Huge Discount", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this@MainActivity, "Successfully Subscribed to Huge Discount!", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+        }
     }
 }
 
